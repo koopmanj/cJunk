@@ -10,11 +10,11 @@ for ($i = 1; $i -lt 3; $i++)
 
 for ($i = 1; $i -lt 3; $i++)
 { 
-    New-VirtualMachine -VMName w2k16-core-sql$i -ImagesLocation C:\Images -VMsLocation C:\Hyper-V -VirtualSwitchName External -ProcessorCount 1 -Generation 2 -Memory 2048 -Verbose    
-    Start-VM -VMName w2k16-core-sql$i
+    New-VirtualMachine -VMName w2k16-sql$i -ImagesLocation F:\Images -VMsLocation J:\Hyper-V -VirtualSwitchName External -ProcessorCount 1 -Generation 2 -Memory 2048 -Verbose    
+    #Start-VM -VMName w2k16-core-sql$i
 }
 
-New-VirtualMachine -VMName w2k16-core-dc1 -ImagesLocation C:\Images -VMsLocation C:\Hyper-V -VirtualSwitchName External -ProcessorCount 1 -Generation 2 -Memory 2048 -Verbose
+New-VirtualMachine -VMName w2k16-dc1 -ImagesLocation F:\Images -VMsLocation J:\Hyper-V -VirtualSwitchName External -ProcessorCount 1 -Generation 2 -Memory 2048 -Verbose
 New-VirtualMachine -VMName w2k16-core-dc2 -ImagesLocation C:\Images -VMsLocation C:\Hyper-V -VirtualSwitchName External -ProcessorCount 1 -Generation 2 -Memory 2048 -Verbose
 New-VirtualMachine -VMName w2k16-template -ImagesLocation C:\Images -VMsLocation C:\Hyper-V -VirtualSwitchName External -ProcessorCount 1 -Generation 2 -Memory 2 -Verbose
 New-VirtualMachine -VMName w2k16-test -ImagesLocation C:\Images -VMsLocation C:\Hyper-V -VirtualSwitchName External -ProcessorCount 1 -Generation 2 -Memory 2 -Verbose
@@ -218,7 +218,7 @@ $PublicDNSIP = '8.8.8.8'
 
 #region set dns suffix
 #Changes the setting to Append these DNS Suffixes and adds suffixes
-$suffixes = 'joko.local'
+$suffixes = 'jokohome.local'
 (Get-VM).foreach({
     if($_.state -eq 'Running')
     {

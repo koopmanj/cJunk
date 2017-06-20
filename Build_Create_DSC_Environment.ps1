@@ -7,7 +7,7 @@ configuration DomainController
         param(
             [PSCredential] $DomainCredentials,
             [ipaddress]$primarydcdns,
-            $domainname = 'joko.local'
+            $domainname = 'jokohome.local'
         )
         Import-DscResource –ModuleName @{ModuleName="xActiveDirectory";ModuleVersion="2.16.0.0"}
         Import-DscResource –ModuleName @{ModuleName="xComputerManagement";ModuleVersion="1.9.0.0"}
@@ -26,10 +26,10 @@ configuration DomainController
                     Name   = "AD-Domain-Services"
                 }
 
-                xADDomain 'joko'
+                xADDomain 'jokohome'
                 {
                     DomainAdministratorCredential = $DomainCredentials
-                    DomainName = 'joko.local'
+                    DomainName = 'jokohome.local'
                     SafemodeAdministratorPassword = $DomainCredentials
                     DatabasePath = 'c:\ntds'
                     LogPath = 'c:\ntds'
@@ -178,7 +178,7 @@ configuration DomainController
                     SecurityMode = 'SQL'
                     #SecurityMode = 'Windows'
                     #SourceCredential = $DomainCredentialswap
-                    SourcePath = '\\w2k16-gui-datac\e'
+                    SourcePath = 'd:\'
                     #[SQLBackupDir = [string]]
                     #[SQLCollation = [string]]
                     SQLSvcAccount = $DomainCredentials
@@ -247,7 +247,7 @@ configuration DomainController
                     Action = 'AddNode'
                     ForceReboot = $false
                     UpdateEnabled = 'False'
-                    SourcePath = '\\w2k16-gui-datac\e'
+                    SourcePath = 'd:\'
                     SourceCredential = $DomainCredentials
                     SetupCredential = $DomainCredentials
 
@@ -289,7 +289,7 @@ configuration DomainController
                     ASLogDir = 'C:\MSOLAP\Log'
                     ASBackupDir = 'C:\MSOLAP\Backup'
                     ASTempDir = 'C:\MSOLAP\Temp'
-                    SourcePath = '\\w2k16-gui-datac\e'
+                    SourcePath = 'd:\'
                     UpdateEnabled = 'False'
                     ForceReboot = $false
                 }
@@ -327,7 +327,7 @@ $cd = @{
             PSDscAllowDomainUser = $true
         }
 
-        $Nodes = (get-vm).where({$_.name -notlike '*dc1'}).name
+        $Nodes = (get-vm).where({$_.name}).name
         foreach($Node in $Nodes)
         {
             if($Node -like '*sql1')
