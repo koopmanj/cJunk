@@ -42,7 +42,7 @@ configuration DomainController
                     GroupName   = 'MSSQL_Administrators'
                     groupscope  = 'Global'
                     Category    = 'Security'
-                    #Credential  = $DomainCredentials
+                    Credential  = $DomainCredentials
                     Description = 'Sysadmin in MSSQL'
                     Ensure      = 'Present'
                 }
@@ -125,7 +125,7 @@ configuration DomainController
                     Credential  = $DomainCredentials
                     Description = 'Sysadmin in MSSQL'
                     Ensure      = 'Present'
-                    Members     = 'joko\mssql_administrators'
+                    Members     = 'jokohome\mssql_administrators'
                 }
 
                 
@@ -136,8 +136,9 @@ configuration DomainController
                 xCluster 'WINC0003'
                 {
                     Name = 'WINC0003'
-                    StaticIPAddress   = '10.128.2.251'
+                    StaticIPAddress   = '192.168.10.163'
                     DomainAdministratorCredential = $DomainCredentials
+                    PsDscRunAsCredential =  = $DomainCredentials
                 } 
 
                           
@@ -233,7 +234,7 @@ configuration DomainController
                     Name = 'WINC0003-SQLL1'
                     Nodename = 'w2k16-core-sql1' #primary node $PrimaryNode
                     InstanceName  = 'INSTANCE1'
-                    ipaddress = @('10.128.2.247/255.255.255.0')#,'10.128.2.249/255.255.255.0')
+                    ipaddress = @('192.168.10.164/255.255.255.0')#,'10.128.2.249/255.255.255.0')
                     port = 1433
                     Ensure = 'Present'
                 }

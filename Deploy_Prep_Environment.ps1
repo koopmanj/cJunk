@@ -103,25 +103,35 @@ New-VirtualMachine -VMName w2k16-core-sqlsa -ImagesLocation C:\Images -VMsLocati
             $LocalCredentials
         )
         
-        if((Get-DscResource -Module xactivedirectory) -eq $null)
+        if((Get-DscResource -Module xActiveDirectory).where({$_.version -eq '2.16.0.0'}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xactivedirectory will be installed" -Verbose
-            Find-DscResource -Module xactivedirectory -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xactivedirectory -MinimumVersion '2.16.0.0' -MaximumVersion '2.16.0.0' -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
             Write-Verbose -Message "$env:computername : Module xactivedirectory allready installed" -Verbose
         }
 
-        if((Get-DscResource -Module xComputerManagement) -eq $null)
+        if((Get-DscResource -Module xComputerManagement).where({$_.version -eq '1.9.0.0'}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xComputerManagement will be installed" -Verbose
-            Find-DscResource -Module xComputerManagement -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xComputerManagement -MinimumVersion '1.9.0.0' -MaximumVersion '1.9.0.0' -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
             Write-Verbose -Message "$env:computername : Module xComputerManagement allready installed" -Verbose
         }
+        if((Get-DscResource -Module xDnsServer).where({$_.version -eq '1.7.0.0'}).count -eq 0)
+        {
+            Write-Verbose -Message "$env:computername : Module xDnsServer will be installed" -Verbose
+            Find-DscResource -Module xDnsServer -MinimumVersion '1.7.0.0' -MaximumVersion '1.7.0.0' -Verbose | install-module -Confirm:$false -Verbose
+        }
+        else
+        {
+            Write-Verbose -Message "$env:computername : Module xComputerManagement allready installed" -Verbose
+        }
+
     } -Credential $LocalCredentials
     })
 (Get-VM).where({$_.state -eq 'running'}).where({$_.name -like '*sql*'}).foreach({
@@ -130,20 +140,25 @@ New-VirtualMachine -VMName w2k16-core-sqlsa -ImagesLocation C:\Images -VMsLocati
             $LocalCredentials
         )
         
-        if((Get-DscResource -Module xsqlserver) -eq $null)
+        if((Get-DscResource -Module xsqlserver).where({$_.version -eq "7.0.0.0"}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xsqlserver will be installed" -Verbose
-            Find-DscResource -Module xsqlserver -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xsqlserver -MinimumVersion "7.0.0.0" -MaximumVersion "7.0.0.0" -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
             Write-Verbose -Message "$env:computername : Module xsqlserver allready installed" -Verbose
         }
 
-        if((Get-DscResource -Module xFailOverCluster) -eq $null)
+        if((Get-DscResource -Module xFailOverCluster).where({$_version -eq '1.6.0.0'}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xFailOverCluster will be installed" -Verbose
-            Find-DscResource -Module xFailOverCluster -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xFailOverCluster -MinimumVersion '1.6.0.0' -MaximumVersion '1.6.0.0' -Verbose | install-module -Confirm:$false -Verbose
+        }
+        if((Get-DscResource -Module xDnsServer).where({$_.version -eq '1.7.0.0'}).count -eq 0)
+        {
+            Write-Verbose -Message "$env:computername : Module xDnsServer will be installed" -Verbose
+            Find-DscResource -Module xDnsServer -MinimumVersion '1.7.0.0' -MaximumVersion '1.7.0.0' -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
