@@ -13,6 +13,7 @@ configuration DomainController
         Import-DscResource –ModuleName @{ModuleName="xComputerManagement";ModuleVersion="1.9.0.0"}
         Import-DscResource –ModuleName @{ModuleName="xSQLserver";ModuleVersion="7.0.0.0"}
         Import-DscResource -ModuleName @{ModuleName='xFailOverCluster';ModuleVersion='1.6.0.0'}
+        Import-DscResource -ModuleName @{ModuleName='xDnsServer';ModuleVersion='1.7.0.0'}
         Import-DscResource –ModuleName "PSDesiredStateConfiguration"
         
             #node ("Node1")
@@ -35,6 +36,17 @@ configuration DomainController
                     LogPath = 'c:\ntds'
                     #PsDscRunAsCredential = Get-Credential
                     SysvolPath = 'c:\sys'
+                }
+
+                #Address Record for member computer (clusternode won't be created, ensure it's resolable from the sql nodes, otherwise installation w
+                xDnsRecord 'ClusterAddress'
+                {
+                    Name = 'WINC0003'
+                    Target = '192.168.10.163'
+                    Type = 'Arecord'
+                    Zone = $domainname
+                    Ensure = 'Present'
+                    PsDscRunAsCredential = $DomainCredentials
                 }
 
                 xADGroup 'Domain_MSSQL_Administrators'
@@ -89,8 +101,6 @@ configuration DomainController
                 xComputer 'Join Domain'
                 {
                     Name = $nodenaam
-                    
-
                     Credential = $DomainCredentials
                     DomainName = $domainname
 
@@ -133,14 +143,16 @@ configuration DomainController
 
             node $AllNodes.Where{$_.Role -eq "Primary"}.NodeName
             {
+ 
                 xCluster 'WINC0003'
                 {
                     Name = 'WINC0003'
                     StaticIPAddress   = '192.168.10.163'
                     DomainAdministratorCredential = $DomainCredentials
-                    PsDscRunAsCredential =  = $DomainCredentials
+                    PsDscRunAsCredential =  $DomainCredentials
                 } 
 
+   
                           
                 xSQLserversetup 'SQL2016-Standard'
                 {
@@ -198,7 +210,7 @@ configuration DomainController
                 {
                     EndPointName = 'WINC0003-SQLE1'
                     SQLInstanceName = 'INSTANCE1'
-                    SQLServer = 'w2k16-core-sql1'
+                    SQLServer = 'w2k16-sql1'
                     Ensure = 'Present'
                     Port = 5022
                 }
@@ -207,7 +219,7 @@ configuration DomainController
                 xSQLServerAlwaysOnService 'Enable Hadr'
                 {
                     SQLInstanceName = 'INSTANCE1'
-                    SQLServer = 'w2k16-core-sql1'
+                    SQLServer = 'w2k16-sql1'
                     Ensure = 'Present'
                     PsDscRunAsCredential = $DomainCredentials
                     RestartTimeout = 10
@@ -218,7 +230,7 @@ configuration DomainController
                 xSQLServerAlwaysOnAvailabilityGroup 'ha group'
                 {
                     Name = 'WINC0003-SQLG1'
-                    SQLServer = 'w2k16-core-sql1'
+                    SQLServer = 'w2k16-sql1'
                     SQLInstanceName = 'instance1'
                     Ensure = 'Present'
                     AutomatedBackupPreference  = 'Secondary'
@@ -232,7 +244,7 @@ configuration DomainController
                 {
                     AvailabilityGroup = 'WINC0003-SQLG1'
                     Name = 'WINC0003-SQLL1'
-                    Nodename = 'w2k16-core-sql1' #primary node $PrimaryNode
+                    Nodename = 'w2k16-sql1' #primary node $PrimaryNode
                     InstanceName  = 'INSTANCE1'
                     ipaddress = @('192.168.10.164/255.255.255.0')#,'10.128.2.249/255.255.255.0')
                     port = 1433
@@ -397,10 +409,13 @@ $RestVM = (get-vm).where({$_.name -notlike '*dc*' -and $_.name -notlike '*gui*' 
 
 Start-DscConfiguration -ComputerName $DC1VM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
 Start-DscConfiguration -ComputerName $DC2VM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
-Start-DscConfiguration -ComputerName $GUIVM.substring(0,15) -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
-Start-DscConfiguration -ComputerName $SQLVM                 -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
-Start-DscConfiguration -ComputerName $RestVM                -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
-Start-DscConfiguration -
+Start-DscConfiguration -ComputerName $GUIVM.substring(0,15)  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+
+#ensure install medium is present, previous domain objects are removed if needed, the domain controller is resolve-able via dns
+Start-DscConfiguration -ComputerName $SQLVM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+Start-DscConfiguration -ComputerName $RestVM                 -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+Test-NetConnection $SQLVM -Port 5985
+
 
 $GUIVM = 
 $GUIVM -replace ".{15}",""
