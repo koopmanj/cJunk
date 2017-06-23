@@ -7,7 +7,7 @@ configuration DomainController
         param(
             [PSCredential] $DomainCredentials,
             [ipaddress]$primarydcdns,
-            $domainname = 'jokohome.local'
+            $domainname = 'joko.local'
         )
         Import-DscResource –ModuleName @{ModuleName="xActiveDirectory";ModuleVersion="2.16.0.0"}
         Import-DscResource –ModuleName @{ModuleName="xComputerManagement";ModuleVersion="1.9.0.0"}
@@ -26,10 +26,10 @@ configuration DomainController
                     Name   = "AD-Domain-Services"
                 }
 
-                xADDomain 'jokohome'
+                xADDomain 'joko'
                 {
                     DomainAdministratorCredential = $DomainCredentials
-                    DomainName = 'jokohome.local'
+                    DomainName = 'joko.local'
                     SafemodeAdministratorPassword = $DomainCredentials
                     DatabasePath = 'c:\ntds'
                     LogPath = 'c:\ntds'
@@ -133,14 +133,6 @@ configuration DomainController
 
             node $AllNodes.Where{$_.Role -eq "Primary"}.NodeName
             {
-                xCluster 'WINC0003'
-                {
-                    Name = 'WINC0003'
-                    StaticIPAddress   = '10.128.2.251'
-                    DomainAdministratorCredential = $DomainCredentials
-                } 
-
-                          
                 xSQLserversetup 'SQL2016-Standard'
                 {
                     InstanceName = 'INSTANCE1'
@@ -159,9 +151,9 @@ configuration DomainController
                     BrowserSvcStartupType = 'Manual'
                     #[DependsOn = [string[]]]
                     #[ErrorReporting = [string]]
-                    #FailoverClusterGroupName = 'WINC0003GN'
+                    #FailoverClusterGroupName = 'WINC0001GN'
                     #FailoverClusterIPAddress = '192.168.0.171'
-                    #FailoverClusterNetworkName = 'WINC0003NN'
+                    #FailoverClusterNetworkName = 'WINC0001NN'
                     Features = 'SQLENGINE'#'SQLENGINE'
                     ForceReboot = $true
                     #[FTSvcAccount = [PSCredential]]
@@ -178,7 +170,7 @@ configuration DomainController
                     SecurityMode = 'SQL'
                     #SecurityMode = 'Windows'
                     #SourceCredential = $DomainCredentialswap
-                    SourcePath = 'd:\'
+                    SourcePath = '\\w2k16-gui-datac\e'
                     #[SQLBackupDir = [string]]
                     #[SQLCollation = [string]]
                     SQLSvcAccount = $DomainCredentials
@@ -193,9 +185,16 @@ configuration DomainController
                     #[UpdateSource = [string]]
                 }
 
+                xCluster 'WINC0001'
+                {
+                    Name = 'WINC0001'
+                    StaticIPAddress   = '192.168.10.160'
+                    DomainAdministratorCredential = $DomainCredentials
+                } 
+
                 xSQLServerEndpoint 'endpoint'
                 {
-                    EndPointName = 'WINC0003-SQLE1'
+                    EndPointName = 'WINC0001-SQLE1'
                     SQLInstanceName = 'INSTANCE1'
                     SQLServer = 'w2k16-core-sql1'
                     Ensure = 'Present'
@@ -216,7 +215,7 @@ configuration DomainController
                 #region create ha group
                 xSQLServerAlwaysOnAvailabilityGroup 'ha group'
                 {
-                    Name = 'WINC0003-SQLG1'
+                    Name = 'WINC0001-SQLG1'
                     SQLServer = 'w2k16-core-sql1'
                     SQLInstanceName = 'instance1'
                     Ensure = 'Present'
@@ -229,11 +228,11 @@ configuration DomainController
                 #region create ha listener
                 xSQLServerAvailabilityGroupListener 'ha listener'
                 {
-                    AvailabilityGroup = 'WINC0003-SQLG1'
-                    Name = 'WINC0003-SQLL1'
+                    AvailabilityGroup = 'WINC0001-SQLG1'
+                    Name = 'WINC0001-SQLL1'
                     Nodename = 'w2k16-core-sql1' #primary node $PrimaryNode
                     InstanceName  = 'INSTANCE1'
-                    ipaddress = @('10.128.2.247/255.255.255.0')#,'10.128.2.249/255.255.255.0')
+                    ipaddress = @('192.168.10.161/255.255.255.0')
                     port = 1433
                     Ensure = 'Present'
                 }
@@ -247,7 +246,7 @@ configuration DomainController
                     Action = 'AddNode'
                     ForceReboot = $false
                     UpdateEnabled = 'False'
-                    SourcePath = 'd:\'
+                    SourcePath = '\\w2k16-gui-datac\e'
                     SourceCredential = $DomainCredentials
                     SetupCredential = $DomainCredentials
 
@@ -258,7 +257,7 @@ configuration DomainController
                     AgtSvcAccount = $DomainCredentials
                     ASSvcAccount = $DomainCredentials
 
-                    FailoverClusterNetworkName = 'WINC0003-SQLL1'
+                    FailoverClusterNetworkName = 'WINC0001-SQLL1'
                 }
             }
 
@@ -289,7 +288,7 @@ configuration DomainController
                     ASLogDir = 'C:\MSOLAP\Log'
                     ASBackupDir = 'C:\MSOLAP\Backup'
                     ASTempDir = 'C:\MSOLAP\Temp'
-                    SourcePath = 'd:\'
+                    SourcePath = '\\w2k16-gui-datac\e'
                     UpdateEnabled = 'False'
                     ForceReboot = $false
                 }
@@ -388,14 +387,14 @@ $cd = @{
 #move C:\DSC\Hyper-V\* C:\DSC\Hyper-V\Archive\
 DomainController -OutputPath C:\DSC\Hyper-V -ConfigurationData $cd -DomainCredentials $DomainCredentials
 
-$DC1VM   = (get-vm).where({$_.name -like '*dc1*' }).name
-$DC2VM   = (get-vm).where({$_.name -like '*dc2*' }).name
+$DC1VM  = (get-vm).where({$_.name -like '*dc1*' }).name
+$DC2VM  = (get-vm).where({$_.name -like '*dc2*' }).name
 $GUIVM  = (get-vm).where({$_.name -like '*gui*'}).name
 $SQLVM  = (get-vm).where({$_.name -like '*sql*'  -and $_.name -notlike '*SQL2*' -and $_.name -notlike '*SQLT*'-and $_.name -notlike '*SQLsa*'}).name
 $RestVM = (get-vm).where({$_.name -notlike '*dc*' -and $_.name -notlike '*gui*' -and $_.name -notlike '*sql*' }).name
 
-Start-DscConfiguration -ComputerName $DC1VM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
-Start-DscConfiguration -ComputerName $DC2VM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
+Start-DscConfiguration -ComputerName $DC1VM                 -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
+Start-DscConfiguration -ComputerName $DC2VM                 -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
 Start-DscConfiguration -ComputerName $GUIVM.substring(0,15) -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
 Start-DscConfiguration -ComputerName $SQLVM                 -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
 Start-DscConfiguration -ComputerName $RestVM                -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force

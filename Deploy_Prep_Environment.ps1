@@ -103,20 +103,20 @@ New-VirtualMachine -VMName w2k16-core-sqlsa -ImagesLocation C:\Images -VMsLocati
             $LocalCredentials
         )
         
-        if((Get-DscResource -Module xactivedirectory) -eq $null)
+        if((Get-DscResource -Module xActiveDirectory).where({$_.version -eq '2.16.0.0'}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xactivedirectory will be installed" -Verbose
-            Find-DscResource -Module xactivedirectory -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xactivedirectory -MinimumVersion '2.16.0.0' -MaximumVersion '2.16.0.0' -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
             Write-Verbose -Message "$env:computername : Module xactivedirectory allready installed" -Verbose
         }
 
-        if((Get-DscResource -Module xComputerManagement) -eq $null)
+        if((Get-DscResource -Module xComputerManagement).where({$_.version -eq '1.9.0.0'}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xComputerManagement will be installed" -Verbose
-            Find-DscResource -Module xComputerManagement -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xComputerManagement -MinimumVersion '1.9.0.0' -MaximumVersion '1.9.0.0' -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
@@ -130,20 +130,20 @@ New-VirtualMachine -VMName w2k16-core-sqlsa -ImagesLocation C:\Images -VMsLocati
             $LocalCredentials
         )
         
-        if((Get-DscResource -Module xsqlserver) -eq $null)
+        if((Get-DscResource -Module xsqlserver).where({$_.version -eq "7.0.0.0"}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xsqlserver will be installed" -Verbose
-            Find-DscResource -Module xsqlserver -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xsqlserver -MinimumVersion "7.0.0.0" -MaximumVersion "7.0.0.0" -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
             Write-Verbose -Message "$env:computername : Module xsqlserver allready installed" -Verbose
         }
 
-        if((Get-DscResource -Module xFailOverCluster) -eq $null)
+        if((Get-DscResource -Module xFailOverCluster).where({$_version -eq '1.6.0.0'}).count -eq 0)
         {
             Write-Verbose -Message "$env:computername : Module xFailOverCluster will be installed" -Verbose
-            Find-DscResource -Module xFailOverCluster -Verbose | install-module -Confirm:$false -Verbose
+            Find-DscResource -Module xFailOverCluster -MinimumVersion '1.6.0.0' -MaximumVersion '1.6.0.0' -Verbose | install-module -Confirm:$false -Verbose
         }
         else
         {
@@ -151,6 +151,32 @@ New-VirtualMachine -VMName w2k16-core-sqlsa -ImagesLocation C:\Images -VMsLocati
         }
     } -Credential $LocalCredentials
     })
+#endregion
+
+#region disable ipv6
+(Get-VM).foreach({
+    if($_.state -eq 'Running')
+    {
+        Invoke-Command -VMName $_.name -Credential $LocalCredentials -ScriptBlock {
+            $Adapter = Get-NetAdapterBinding -Name *Ethernet* 
+            Disable-NetAdapterBinding -Name $Adapter.name -ComponentID ms_tcpip6
+            Write-Verbose -Message "$env:computername : ipv6 disabled" -Verbose
+        }
+
+    if($error[0] -like '*credential is invalid*')
+    {
+        Invoke-Command -VMName $_.name -Credential $DomainCredentials -ScriptBlock {
+            $Adapter = Get-NetAdapterBinding -Name *Ethernet* 
+            Disable-NetAdapterBinding -Name $Adapter.name -ComponentID ms_tcpip6
+            Write-Verbose -Message "$env:computername : ipv6 disabled" -Verbose
+        }
+    }
+    }
+    else
+    {
+        Write-Warning -Message "$($_.name) VM isnt running" -Verbose
+    }
+})
 #endregion
 
 #region set the domaincontroller dns settings
@@ -183,6 +209,8 @@ $PublicDNSIP = '8.8.8.8'
         Write-Verbose -Message "$env:computername : $($DomainControllerAddressIPv4,$PublicDNSIP | Out-String)" -Verbose
         #Set-DnsClientServerAddress -ServerAddresses $DomainControllerAddressIPv6,$DomainControllerAddressIPv4,$PublicDNSIP  -InterfaceIndex $DNSServers.where({$psitem.interfacealias -like '*Ethernet*'}).InterfaceIndex[0]
         Set-DnsClientServerAddress -ServerAddresses $DomainControllerAddressIPv4,$PublicDNSIP  -InterfaceIndex $DNSServers.where({$psitem.interfacealias -like '*Ethernet*'}).InterfaceIndex[0]
+        net stop dnscache
+        net start dnscache
         #Set-DnsClientServerAddress -ServerAddresses 192.168.1.1 -InterfaceIndex $DNSServers.where({$psitem.interfacealias -like '*Ethernet*'}).InterfaceIndex[0]
     #}
 }
@@ -204,6 +232,9 @@ $PublicDNSIP = '8.8.8.8'
         Write-Verbose -Message "$env:computername : $($DomainControllerAddressIPv4,$PublicDNSIP | Out-String)" -Verbose
         #Set-DnsClientServerAddress -ServerAddresses $DomainControllerAddressIPv6,$DomainControllerAddressIPv4,$PublicDNSIP  -InterfaceIndex $DNSServers.where({$psitem.interfacealias -like '*Ethernet*'}).InterfaceIndex[0]
         Set-DnsClientServerAddress -ServerAddresses $DomainControllerAddressIPv4,$PublicDNSIP  -InterfaceIndex $DNSServers.where({$psitem.interfacealias -like '*Ethernet*'}).InterfaceIndex[0]
+                net stop dnscache
+        net start dnscache
+
         #Set-DnsClientServerAddress -ServerAddresses 192.168.1.1 -InterfaceIndex $DNSServers.where({$psitem.interfacealias -like '*Ethernet*'}).InterfaceIndex[0]
     #}
 }
@@ -279,11 +310,8 @@ $suffixes = 'jokohome.local'
 
 #endregion
 
-Disable-NetAdapterBinding -Name "Ethernet 2" -ComponentID ms_tcpip6
-#endregion
 
 New-NetIPAddress -InterfaceAlias
-
 New-NetIPAddress –InterfaceAlias "Ethernet 2" –IPAddress "192.168.0.1" –PrefixLength 24
 New-NetIPAddress –InterfaceAlias "Ethernet"   –IPAddress "192.168.0.2" –PrefixLength 24
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" -ServerAddresses 192.168.0.1
