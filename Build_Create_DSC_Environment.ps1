@@ -255,12 +255,96 @@ configuration DomainController
       
             node $AllNodes.Where{$_.Role -eq "Secondary"}.NodeName
             {
-                xSQLserversetup 'SQL2016-Standard'
+                         xSQLserversetup 'SQL2016-Standard'
+                {
+                    InstanceName = 'INSTANCE1'
+                    SetupCredential = $DomainCredentials
+                    Action = 'Install'
+                    #Action = 'InstallFailoverCluster'
+                    AgtSvcAccount = $DomainCredentials
+                    ###ASBackupDir = "D:\Microsoft SQL Server\OLAP\Backup"
+                    #ASCollation = [string]]
+                    ###ASConfigDir = "D:\Microsoft SQL Server\OLAP\Config"
+                    ###ASDataDir = "D:\Microsoft SQL Server\OLAP\Data"
+                    ###ASLogDir = "D:\Microsoft SQL Server\OLAP\Log"
+                    #[ASSvcAccount = [PSCredential]]
+                    #ASSysAdminAccounts = ".\MSSQL_Administrators"
+                    ###ASTempDir = "D:\Microsoft SQL Server\OLAP\Temp"
+                    BrowserSvcStartupType = 'Manual'
+                    #[DependsOn = [string[]]]
+                    #[ErrorReporting = [string]]
+                    #FailoverClusterGroupName = 'WINC0003GN'
+                    #FailoverClusterIPAddress = '192.168.0.171'
+                    #FailoverClusterNetworkName = 'WINC0003NN'
+                    Features = 'SQLENGINE'#'SQLENGINE'
+                    ForceReboot = $true
+                    #[FTSvcAccount = [PSCredential]]
+                    InstallSharedDir = 'C:\Program Files\Microsoft SQL Server'
+                    InstallSharedWOWDir = 'C:\Program Files (x86)\Microsoft SQL Server'
+                    InstallSQLDataDir = "C:\Microsoft SQL Server"
+                    InstanceDir = "C:\Microsoft SQL Server"
+                    #[InstanceID = [string]]
+                    #[ISSvcAccount = [PSCredential]]
+                    #ProductKey = 'P7FRV-Y6X6Y-Y8C6Q-TB4QR-DMTTK' # 'Standard'  = 'P7FRV-Y6X6Y-Y8C6Q-TB4QR-DMTTK' #'Enterprise' = '27HMJ-GH7P9-X2TTB-WPHQC-RG79R'
+                    PsDscRunAsCredential = $DomainCredentials
+                    #[RSSvcAccount = [PSCredential]]
+                    SAPwd = $DomainCredentials
+                    SecurityMode = 'SQL'
+                    #SecurityMode = 'Windows'
+                    #SourceCredential = $DomainCredentialswap
+                    SourcePath = 'd:\'
+                    #[SQLBackupDir = [string]]
+                    #[SQLCollation = [string]]
+                    SQLSvcAccount = $DomainCredentials
+                    #SQLSysAdminAccounts = 'MSSQL_Administrators','MSSQL_Administrators'
+                    SQLTempDBDir = "c:\Microsoft SQL Server\Data"
+                    SQLTempDBLogDir = "c:\Microsoft SQL Server\Data"
+                    SQLUserDBDir = "c:\Microsoft SQL Server\Data"
+                    SQLUserDBLogDir = "c:\Microsoft SQL Server\Data"
+                    #[SQMReporting = [string]]
+                    #[SuppressReboot = [bool]]
+                    #[UpdateEnabled = [string]]
+                    #[UpdateSource = [string]]
+                }
+
+                                xSQLServerEndpoint 'endpoint'
+                {
+                    EndPointName = 'WINC0003-SQLE2'
+                    SQLInstanceName = 'INSTANCE1'
+                    SQLServer = 'w2k16-sql2'
+                    Ensure = 'Present'
+                    Port = 5022
+                }
+
+                                #region enable hadr
+                xSQLServerAlwaysOnService 'Enable Hadr'
+                {
+                    SQLInstanceName = 'INSTANCE1'
+                    SQLServer = 'w2k16-sql2'
+                    Ensure = 'Present'
+                    PsDscRunAsCredential = $DomainCredentials
+                    RestartTimeout = 10
+                }
+                #endregion
+                               #region create ha listener
+                ##xSQLServerAvailabilityGroupListener 'ha listener'
+                ##{
+                 ##   AvailabilityGroup = 'WINC0003-SQLG1'
+                  ##  Name = 'WINC0003-SQLL1'
+                   ## Nodename = 'w2k16-sql1' #primary node $PrimaryNode
+                    ##InstanceName  = 'INSTANCE1'
+                    ##ipaddress = @('192.168.10.164/255.255.255.0')#,'10.128.2.249/255.255.255.0')
+                    ##port = 1433
+                    ##Ensure = 'Present'
+                ##}
+                #endregion
+                <#xSQLserversetup 'SQL2016-Standard'
                 {
                     Action = 'AddNode'
                     ForceReboot = $false
                     UpdateEnabled = 'False'
-                    SourcePath = 'd:\'
+                    #SourcePath = 'd:\'
+                    SourcePath = '\\w2k16-dc1\d'
                     SourceCredential = $DomainCredentials
                     SetupCredential = $DomainCredentials
 
@@ -272,8 +356,52 @@ configuration DomainController
                     ASSvcAccount = $DomainCredentials
 
                     FailoverClusterNetworkName = 'WINC0003-SQLL1'
+
+                                        InstallSharedDir = 'C:\Program Files\Microsoft SQL Server'
+                    InstallSharedWOWDir = 'C:\Program Files (x86)\Microsoft SQL Server'
+                    InstallSQLDataDir = "C:\Microsoft SQL Server"
+                    InstanceDir = "C:\Microsoft SQL Server"
+
+                         SQLTempDBDir = "c:\Microsoft SQL Server\Data"
+                    SQLTempDBLogDir = "c:\Microsoft SQL Server\Data"
+                    SQLUserDBDir = "c:\Microsoft SQL Server\Data"
+                    SQLUserDBLogDir = "c:\Microsoft SQL Server\Data"
+
+
+      #SourcePath = $Node."SourcePath$($currentSqlInstance)"
+    #SetupCredential = $SqlInstallCredential
+    #SourceCredential = $SqlInstallCredential
+    #InstanceName = $Node."$($currentSqlInstance)InstanceName"
+
+    #NOT ALLOWED WITH ADDNODE
+    #Features = $Node."$($currentSqlInstance)InstallFeatures"
+    #InstallSharedDir = 'C:\Program Files\Microsoft SQL Server'
+    #InstallSharedWOWDir = 'C:\Program Files (x86)\Microsoft SQL Server'
+    #InstanceDir = 'C:\Program Files\Microsoft SQL Server'
+
+    #SQLSysAdminAccounts = 'COMPANY\SQL Administrators', $SqlAdministratorCredential.UserName
+
+        
+    #SQLBackupDir = 'I:\MSSQL\Backup'
+
+    #ASSvcAccount = $SqlServiceCredential
+    #ASSysAdminAccounts = 'COMPANY\SQL Administrators', $SqlAdministratorCredential.UserName
+
+    #ASConfigDir = 'G:\AS\Config'
+    #ASDataDir = 'E:\AS\Data'
+    #ASLogDir = 'F:\AS\Log'
+    #ASBackupDir = 'I:\AS\Backup'
+    #ASTempDir = 'H:\AS\Temp'
+
+    #FailoverClusterNetworkName = $Node.SqlClusterGroupFailoverClusterNetworkName
+    FailoverClusterIPAddress =  @('192.168.10.164/255.255.255.0')
+    FailoverClusterGroupName = 'WINC0003-SQLG1'
+
+    #DependsOn = '[WindowsFeature]NetFramework35','[WindowsFeature]NetFramework45'
+
+    #>
                 }
-            }
+            
 
             node $AllNodes.Where{$_.Role -eq "SA"}.NodeName
             {
@@ -405,6 +533,7 @@ $DC1VM   = (get-vm).where({$_.name -like '*dc1*' }).name
 $DC2VM   = (get-vm).where({$_.name -like '*dc2*' }).name
 $GUIVM  = (get-vm).where({$_.name -like '*gui*'}).name
 $SQLVM  = (get-vm).where({$_.name -like '*sql*'  -and $_.name -notlike '*SQL2*' -and $_.name -notlike '*SQLT*'-and $_.name -notlike '*SQLsa*'}).name
+$SQLmember  = (get-vm).where({$_.name -notlike '*sql1'  -and $_.name -like '*SQL2*' -and $_.name -notlike '*SQLT*'-and $_.name -notlike '*SQLsa*'}).name
 $RestVM = (get-vm).where({$_.name -notlike '*dc*' -and $_.name -notlike '*gui*' -and $_.name -notlike '*sql*' }).name
 
 Start-DscConfiguration -ComputerName $DC1VM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
@@ -413,6 +542,8 @@ Start-DscConfiguration -ComputerName $GUIVM.substring(0,15)  -Credential $Domain
 
 #ensure install medium is present, previous domain objects are removed if needed, the domain controller is resolve-able via dns
 Start-DscConfiguration -ComputerName $SQLVM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+Start-DscConfiguration -ComputerName $SQLmember              -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+
 Start-DscConfiguration -ComputerName $RestVM                 -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
 Test-NetConnection $SQLVM -Port 5985
 

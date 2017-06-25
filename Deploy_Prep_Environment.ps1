@@ -168,6 +168,32 @@ New-VirtualMachine -VMName w2k16-core-sqlsa -ImagesLocation C:\Images -VMsLocati
     })
 #endregion
 
+#region disable ipv6
+(Get-VM).foreach({
+    if($_.state -eq 'Running')
+    {
+        Invoke-Command -VMName $_.name -Credential $LocalCredentials -ScriptBlock {
+            $Adapter = Get-NetAdapterBinding -Name *Ethernet* 
+            Disable-NetAdapterBinding -Name $Adapter.name -ComponentID ms_tcpip6
+            Write-Verbose -Message "$env:computername : ipv6 disabled" -Verbose
+        }
+
+    if($error[0] -like '*credential is invalid*')
+    {
+        Invoke-Command -VMName $_.name -Credential $DomainCredentials -ScriptBlock {
+            $Adapter = Get-NetAdapterBinding -Name *Ethernet* 
+            Disable-NetAdapterBinding -Name $Adapter.name -ComponentID ms_tcpip6
+            Write-Verbose -Message "$env:computername : ipv6 disabled" -Verbose
+        }
+    }
+    }
+    else
+    {
+        Write-Warning -Message "$($_.name) VM isnt running" -Verbose
+    }
+})
+#endregion
+
 #region set the domaincontroller dns settings
 #$LocalCredentials  = Get-Credential -Message 'Provide a password used for the template' -UserName 'Administrator'
 #$DomainCredentials = Get-Credential -Message 'Provide a password used for the domain' -UserName 'joko\Administrator'
