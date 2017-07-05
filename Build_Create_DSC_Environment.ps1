@@ -1,5 +1,5 @@
 ﻿#$LocalCredentials  = Get-Credential -Message 'Provide a password used for the template' -UserName 'Administrator'
-#$DomainCredentials = Get-Credential -Message 'Provide a password used for the domain' -UserName 'joko\Administrator'
+#$DomainCredentials = Get-Credential -Message 'Provide a password used for the domain' -UserName 'jokohome\Administrator'
 #$Credentials = Get-Credential -Message 'Provide a password used for the domain' -UserName 'Administrator'
 
 configuration DomainController
@@ -49,6 +49,25 @@ configuration DomainController
                     PsDscRunAsCredential = $DomainCredentials
                 }
 
+                xDnsRecord 'SQLResourceGroup'
+                {
+                    Name = 'WINC0003-SQLL1'
+                    Target = '192.168.10.164'
+                    Type = 'Arecord'
+                    Zone = $domainname
+                    Ensure = 'Present'
+                    PsDscRunAsCredential = $DomainCredentials
+                }
+
+                #xDnsRecord 'SQLResourceListener'
+                #{
+                #    Name = 'WINC0003-SQLL1'
+                #    Target = '192.168.10.163'
+                #    Type = 'Arecord'
+                #    Zone = $domainname
+                #    Ensure = 'Present'
+                #    PsDscRunAsCredential = $DomainCredentials
+                #}
                 xADGroup 'Domain_MSSQL_Administrators'
                 {
                     GroupName   = 'MSSQL_Administrators'
@@ -255,6 +274,15 @@ configuration DomainController
       
             node $AllNodes.Where{$_.Role -eq "Secondary"}.NodeName
             {
+                  xCluster 'WINC0003'
+                {
+                    Name = 'WINC0003'
+                    StaticIPAddress   = '192.168.10.163'
+                    DomainAdministratorCredential = $DomainCredentials
+                    PsDscRunAsCredential =  $DomainCredentials
+                } 
+
+   
                          xSQLserversetup 'SQL2016-Standard'
                 {
                     InstanceName = 'INSTANCE1'
@@ -327,16 +355,16 @@ configuration DomainController
                 }
                 #endregion
                                #region create ha listener
-                ##xSQLServerAvailabilityGroupListener 'ha listener'
-                ##{
-                 ##   AvailabilityGroup = 'WINC0003-SQLG1'
-                  ##  Name = 'WINC0003-SQLL1'
-                   ## Nodename = 'w2k16-sql1' #primary node $PrimaryNode
-                    ##InstanceName  = 'INSTANCE1'
-                    ##ipaddress = @('192.168.10.164/255.255.255.0')#,'10.128.2.249/255.255.255.0')
-                    ##port = 1433
-                    ##Ensure = 'Present'
-                ##}
+                #xSQLServerAvailabilityGroupListener 'ha listener'
+                #{
+                #    AvailabilityGroup = 'WINC0003-SQLG1'
+                #    Name = 'WINC0003-SQLL1'
+                #    Nodename = 'w2k16-sql1' #primary node $PrimaryNode
+                #    InstanceName  = 'INSTANCE1'
+                #    ipaddress = @('192.168.10.164/255.255.255.0')#,'10.128.2.249/255.255.255.0')
+                #    port = 1433
+                #    Ensure = 'Present'
+                #}
                 #endregion
                 <#xSQLserversetup 'SQL2016-Standard'
                 {
@@ -553,3 +581,5 @@ $GUIVM -replace ".{15}",""
 
 ping $SQLVM[0]
 ping $SQLVM[1]
+ping WINC0003-SQLG1
+ping WINC0003-SQLL1

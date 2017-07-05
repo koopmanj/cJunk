@@ -320,8 +320,9 @@ $suffixes = 'jokohome.local'
 
 #endregion
 
+#region crapp .ignore
 Disable-NetAdapterBinding -Name "Ethernet 2" -ComponentID ms_tcpip6
-#endregion
+
 
 New-NetIPAddress -InterfaceAlias
 
@@ -510,3 +511,5 @@ xComputer [String] #ResourceName
     [UnjoinCredential = [PSCredential]]
     [WorkGroupName = [string]]
 }
+
+#endregion
