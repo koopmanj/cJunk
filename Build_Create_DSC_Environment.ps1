@@ -536,15 +536,15 @@ $SQLVM  = (get-vm).where({$_.name -like '*sql*'  -and $_.name -notlike '*SQL2*' 
 $SQLmember  = (get-vm).where({$_.name -notlike '*sql1'  -and $_.name -like '*SQL2*' -and $_.name -notlike '*SQLT*'-and $_.name -notlike '*SQLsa*'}).name
 $RestVM = (get-vm).where({$_.name -notlike '*dc*' -and $_.name -notlike '*gui*' -and $_.name -notlike '*sql*' }).name
 
-Start-DscConfiguration -ComputerName $DC1VM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
-Start-DscConfiguration -ComputerName $DC2VM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
-Start-DscConfiguration -ComputerName $GUIVM.substring(0,15)  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+Start-DscConfiguration -ComputerName $DC1VM    -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
+Start-DscConfiguration -ComputerName $DC2VM    -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -force
+Start-DscConfiguration -ComputerName $GUIVM    -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
 
 #ensure install medium is present, previous domain objects are removed if needed, the domain controller is resolve-able via dns
-Start-DscConfiguration -ComputerName $SQLVM                  -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
-Start-DscConfiguration -ComputerName $SQLmember              -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+Start-DscConfiguration -ComputerName $SQLVM     -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+Start-DscConfiguration -ComputerName $SQLmember -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
 
-Start-DscConfiguration -ComputerName $RestVM                 -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
+Start-DscConfiguration -ComputerName $RestVM    -Credential $DomainCredentials -Wait -Verbose -Path C:\DSC\Hyper-V -Force
 Test-NetConnection $SQLVM -Port 5985
 
 

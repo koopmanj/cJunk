@@ -1,5 +1,5 @@
 ﻿$LocalCredentials  = Get-Credential -Message 'provide password for blank vm to rename host' -UserName Administrator
-$DomainCredentials = Get-Credential -Message 'Provide a password used for the domain' -UserName 'joko\Administrator'
+$DomainCredentials = Get-Credential -Message 'Provide a password used for the domain' -UserName 'jokohome\Administrator'
 
 #region deploy new vm
 for ($i = 1; $i -lt 3; $i++)
