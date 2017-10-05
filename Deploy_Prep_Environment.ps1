@@ -1,4 +1,5 @@
-﻿$LocalCredentials  = Get-Credential -Message 'provide password for blank vm to rename host' -UserName Administrator
+﻿
+$LocalCredentials  = Get-Credential -Message 'provide password for blanco vm to rename host' -UserName Administrator
 $DomainCredentials = Get-Credential -Message 'Provide a password used for the domain' -UserName 'jokohome\Administrator'
 
 #region deploy new vm
